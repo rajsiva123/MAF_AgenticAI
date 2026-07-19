@@ -1,2 +1,2 @@
-# MAF_AgenticAI
+# MAF AgenticAI
 MAF AgenticAI
