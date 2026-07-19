@@ -8,3 +8,4 @@ def test_triage_incident_high_priority() -> None:
     assert triage.ticket_type == "incident"
     assert triage.priority == "1"
     assert triage.category == "identity_access"
+    assert triage.sentiment == "neutral"

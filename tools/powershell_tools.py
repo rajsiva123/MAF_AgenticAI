@@ -16,7 +16,7 @@ class PowerShellToolRunner:
         self._script_root = Path(script_root).resolve()
         self._allowed_scripts = {"reset_password.ps1", "restart_service.ps1", "check_disk_space.ps1"}
         self._execution_timeout_seconds = execution_timeout_seconds
-        self._allowed_arg_pattern = re.compile(r"^[A-Za-z0-9_.:@/\\\\-]+$")
+        self._allowed_arg_pattern = re.compile(r"^[A-Za-z0-9_.:@-]+$")
 
     @staticmethod
     def is_available() -> bool:
