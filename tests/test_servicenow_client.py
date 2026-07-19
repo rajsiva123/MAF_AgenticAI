@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import requests
+import pytest
 
 from tools.servicenow_client import ServiceNowClient
 
@@ -46,11 +47,8 @@ def test_get_incident_raises_after_retries(monkeypatch) -> None:
 
     monkeypatch.setattr(client._session, "request", always_fail)
 
-    try:
+    with pytest.raises(RuntimeError, match="failed after 2 attempts"):
         client.get_incident("INC0010001")
-        assert False, "Expected RuntimeError"
-    except RuntimeError as exc:
-        assert "failed after 2 attempts" in str(exc)
 
 
 def test_search_incidents_url_encodes_query(monkeypatch) -> None:

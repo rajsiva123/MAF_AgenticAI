@@ -43,7 +43,8 @@ class ServiceNowClient:
     def get_incident(self, number: str) -> dict[str, Any]:
         """Fetch an incident by incident number (example: INC0010001)."""
 
-        return self._request("GET", f"/api/now/table/incident?sysparm_query=number={number}")
+        encoded_number = quote(number, safe="")
+        return self._request("GET", f"/api/now/table/incident?sysparm_query=number={encoded_number}")
 
     def search_incidents(self, short_description: str) -> dict[str, Any]:
         """Search incidents by short description text."""

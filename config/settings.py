@@ -30,7 +30,7 @@ def load_settings() -> Settings:
     return Settings(
         foundry_project_endpoint=os.getenv("AZURE_AI_FOUNDRY_PROJECT_ENDPOINT", ""),
         foundry_model_deployment=os.getenv("AZURE_AI_FOUNDRY_MODEL_DEPLOYMENT", ""),
-        foundry_api_version=os.getenv("AZURE_AI_FOUNDRY_API_VERSION", "2024-05-01-preview"),
+        foundry_api_version=os.getenv("AZURE_AI_FOUNDRY_API_VERSION", ""),
         servicenow_instance_url=os.getenv("SERVICENOW_INSTANCE_URL", ""),
         servicenow_username=os.getenv("SERVICENOW_USERNAME", ""),
         servicenow_password=os.getenv("SERVICENOW_PASSWORD", ""),
