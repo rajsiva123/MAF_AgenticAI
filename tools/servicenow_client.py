@@ -65,12 +65,14 @@ class ServiceNowClient:
         last_error: Exception | None = None
         for attempt in range(1, self.max_retries + 1):
             try:
-                headers = {"Content-Type": "application/json"} if method in {"POST", "PATCH", "PUT"} else None
+                headers = dict(kwargs.pop("headers", {}))
+                if method in {"POST", "PATCH", "PUT"}:
+                    headers.setdefault("Content-Type", "application/json")
                 response = self._session.request(
                     method,
                     url,
                     timeout=self.timeout_seconds,
-                    headers=headers,
+                    headers=headers or None,
                     **kwargs,
                 )
                 response.raise_for_status()

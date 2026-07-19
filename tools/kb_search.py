@@ -27,7 +27,10 @@ class KBSearch:
         terms = {t.lower() for t in query.split() if t.strip()}
         results: list[KBResult] = []
         for file_path in self._kb_path.glob("*.md"):
-            content = file_path.read_text(encoding="utf-8")
+            try:
+                content = file_path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
             haystack = content.lower()
             score = sum(1 for term in terms if term in haystack)
             if score > 0:

@@ -22,6 +22,14 @@ class Settings:
     servicenow_max_retries: int = 3
 
 
+def _read_int_env(name: str, default: int) -> int:
+    value = os.getenv(name, str(default))
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer") from exc
+
+
 def load_settings() -> Settings:
     """Load settings from environment variables and .env file."""
 
@@ -33,6 +41,6 @@ def load_settings() -> Settings:
         servicenow_instance_url=os.getenv("SERVICENOW_INSTANCE_URL", ""),
         servicenow_username=os.getenv("SERVICENOW_USERNAME", ""),
         servicenow_password=os.getenv("SERVICENOW_PASSWORD", ""),
-        servicenow_timeout_seconds=int(os.getenv("SERVICENOW_TIMEOUT_SECONDS", "15")),
-        servicenow_max_retries=int(os.getenv("SERVICENOW_MAX_RETRIES", "3")),
+        servicenow_timeout_seconds=_read_int_env("SERVICENOW_TIMEOUT_SECONDS", 15),
+        servicenow_max_retries=_read_int_env("SERVICENOW_MAX_RETRIES", 3),
     )
