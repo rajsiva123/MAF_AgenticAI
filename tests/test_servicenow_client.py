@@ -51,3 +51,16 @@ def test_get_incident_raises_after_retries(monkeypatch) -> None:
         assert False, "Expected RuntimeError"
     except RuntimeError as exc:
         assert "failed after 2 attempts" in str(exc)
+
+
+def test_search_incidents_url_encodes_query(monkeypatch) -> None:
+    client = ServiceNowClient("https://example.service-now.com", "user", "pass")
+    captured: dict[str, str] = {}
+
+    def fake_request(method, url, **kwargs):
+        captured["url"] = url
+        return DummyResponse({"result": []})
+
+    monkeypatch.setattr(client._session, "request", fake_request)
+    client.search_incidents("vpn & email")
+    assert "short_descriptionLIKEvpn%20%26%20email" in captured["url"]

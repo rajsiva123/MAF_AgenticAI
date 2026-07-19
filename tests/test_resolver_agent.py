@@ -11,7 +11,7 @@ class DummyRunner(PowerShellToolRunner):
     def __init__(self) -> None:
         super().__init__(script_root="unused")
 
-    def run(self, script_name: str, args=None):
+    def run(self, script_name: str, args: list[str] | None = None):
         return {"status": "success", "script": script_name}
 
 

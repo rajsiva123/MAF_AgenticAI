@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import time
 from typing import Any
+from urllib.parse import quote
 
 import requests
 
@@ -47,7 +48,7 @@ class ServiceNowClient:
     def search_incidents(self, short_description: str) -> dict[str, Any]:
         """Search incidents by short description text."""
 
-        query = short_description.replace(" ", "%20")
+        query = quote(short_description, safe="")
         return self._request(
             "GET",
             f"/api/now/table/incident?sysparm_query=short_descriptionLIKE{query}",
