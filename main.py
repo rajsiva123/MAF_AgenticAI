@@ -14,6 +14,8 @@ from tools.kb_search import KBSearch
 from tools.powershell_tools import PowerShellToolRunner
 from tools.servicenow_client import ServiceNowClient
 
+MAX_SHORT_DESCRIPTION_LENGTH = 120
+
 
 def run_conversation(user_message: str) -> dict[str, object]:
     """Run triage -> resolve -> escalate handoff chain."""
@@ -54,7 +56,7 @@ def run_conversation(user_message: str) -> dict[str, object]:
         )
         escalation_agent = EscalationAgent(servicenow)
         escalation = escalation_agent.escalate(
-            short_description=user_message[:120],
+            short_description=user_message[:MAX_SHORT_DESCRIPTION_LENGTH],
             description=user_message,
             priority=triage.priority,
         )

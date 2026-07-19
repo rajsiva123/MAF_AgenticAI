@@ -72,7 +72,7 @@ class ServiceNowClient:
                     method,
                     url,
                     timeout=self.timeout_seconds,
-                    headers=headers or None,
+                    headers=headers,
                     **kwargs,
                 )
                 response.raise_for_status()

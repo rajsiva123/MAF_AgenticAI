@@ -36,7 +36,12 @@ class TriageAgent:
         else:
             category = "general"
 
-        priority = "1" if any(word in text for word in ["urgent", "critical", "production down"]) else "3"
+        if any(word in text for word in ["urgent", "critical", "production down"]):
+            priority = "1"
+        elif any(word in text for word in ["important", "soon", "degraded", "slow"]):
+            priority = "2"
+        else:
+            priority = "3"
         sentiment = "negative" if any(word in text for word in ["angry", "frustrated", "upset", "not working"]) else "neutral"
 
         return TriageResult(ticket_type=ticket_type, category=category, priority=priority, sentiment=sentiment)

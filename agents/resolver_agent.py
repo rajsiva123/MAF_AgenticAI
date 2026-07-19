@@ -8,6 +8,9 @@ from typing import Any
 from tools.kb_search import KBSearch
 from tools.powershell_tools import PowerShellToolRunner
 
+DEFAULT_DEMO_USERNAME = "demo.user"
+DEFAULT_SERVICE_NAME = "Spooler"
+
 
 @dataclass
 class ResolverResult:
@@ -32,7 +35,7 @@ class ResolverAgent:
         kb_hits = self._kb_search.search(message)
 
         if "password" in text:
-            tool_result = self._powershell_runner.run("reset_password.ps1", ["-UserName", "demo.user"])
+            tool_result = self._powershell_runner.run("reset_password.ps1", ["-UserName", DEFAULT_DEMO_USERNAME])
             success = tool_result.get("status") in {"success", "skipped"}
             return ResolverResult(
                 resolved=success,
@@ -41,7 +44,7 @@ class ResolverAgent:
             )
 
         if "restart" in text or "service" in text:
-            tool_result = self._powershell_runner.run("restart_service.ps1", ["-ServiceName", "Spooler"])
+            tool_result = self._powershell_runner.run("restart_service.ps1", ["-ServiceName", DEFAULT_SERVICE_NAME])
             success = tool_result.get("status") in {"success", "skipped"}
             return ResolverResult(
                 resolved=success,
