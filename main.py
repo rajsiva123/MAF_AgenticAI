@@ -22,10 +22,10 @@ def run_conversation(user_message: str) -> dict[str, object]:
 
     # Demonstrates AAD-based auth path for Azure AI Foundry connection.
     # Token acquisition is intentionally lazy and only attempted when values are configured.
-    credential_initiated = False
+    credential_created = False
     if settings.foundry_project_endpoint:
-        _credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
-        credential_initiated = _credential is not None
+        DefaultAzureCredential(exclude_interactive_browser_credential=False)
+        credential_created = True
 
     triage_agent = TriageAgent()
     triage = triage_agent.classify(user_message)
@@ -39,7 +39,7 @@ def run_conversation(user_message: str) -> dict[str, object]:
     response: dict[str, object] = {
         "foundry": {
             "project_endpoint_configured": bool(settings.foundry_project_endpoint),
-            "credential_initialized": credential_initiated,
+            "credential_created": credential_created,
         },
         "triage": triage.__dict__,
         "resolver": resolver.__dict__,

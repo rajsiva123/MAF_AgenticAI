@@ -22,7 +22,6 @@ class Settings:
     servicenow_max_retries: int = 3
 
 
-
 def load_settings() -> Settings:
     """Load settings from environment variables and .env file."""
 

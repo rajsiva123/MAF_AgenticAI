@@ -11,7 +11,7 @@ class KBResult:
     """Represents a retrieved KB article."""
 
     source: str
-    score: int
+    match_count: int
     content: str
 
 
@@ -31,6 +31,6 @@ class KBSearch:
             haystack = content.lower()
             score = sum(1 for term in terms if term in haystack)
             if score > 0:
-                results.append(KBResult(source=file_path.name, score=score, content=content))
+                results.append(KBResult(source=file_path.name, match_count=score, content=content))
 
-        return sorted(results, key=lambda item: item.score, reverse=True)[:top_k]
+        return sorted(results, key=lambda item: item.match_count, reverse=True)[:top_k]

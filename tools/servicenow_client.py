@@ -23,7 +23,7 @@ class ServiceNowClient:
     def __post_init__(self) -> None:
         self._session = requests.Session()
         self._session.auth = (self.username, self.password)
-        self._session.headers.update({"Accept": "application/json", "Content-Type": "application/json"})
+        self._session.headers.update({"Accept": "application/json"})
 
     def create_incident(self, short_description: str, description: str, priority: str) -> dict[str, Any]:
         """Create a new ServiceNow incident."""
@@ -65,7 +65,14 @@ class ServiceNowClient:
         last_error: Exception | None = None
         for attempt in range(1, self.max_retries + 1):
             try:
-                response = self._session.request(method, url, timeout=self.timeout_seconds, **kwargs)
+                headers = {"Content-Type": "application/json"} if method in {"POST", "PATCH", "PUT"} else None
+                response = self._session.request(
+                    method,
+                    url,
+                    timeout=self.timeout_seconds,
+                    headers=headers,
+                    **kwargs,
+                )
                 response.raise_for_status()
                 return response.json()
             except requests.RequestException as exc:
