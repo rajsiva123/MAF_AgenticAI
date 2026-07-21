@@ -48,6 +48,12 @@ env/
 .env
 .env.*
 
+# Azure Functions local settings & artifacts
+local.settings.json
+bin/
+obj/
+.python_packages/
+
 # macOS
 .DS_Store
 
