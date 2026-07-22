@@ -7,7 +7,8 @@ visible and individually testable in the Foundry Agents Playground.
 
 This is idempotent: if an agent with the same name already exists in the
 project, its instructions/description are updated instead of creating a
-duplicate.
+duplicate. Resulting Agent IDs are printed to the console (not persisted to
+a file) -- re-run this script any time to look them up again.
 
 NOTE: This only affects what's visible/testable in the Foundry portal. The
 running Function App (agents/rca_agent.py, agents/remediation_planner_agent.py)
@@ -24,7 +25,6 @@ AZURE_AI_PROJECT_ENDPOINT / AZURE_FOUNDRY_MODEL_NAME set in .env.
 """
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -55,8 +55,6 @@ AGENT_DEFINITIONS = [
     },
 ]
 
-OUTPUT_FILE = Path(__file__).resolve().parent / "foundry_agents.json"
-
 
 def main() -> None:
     from azure.ai.agents import AgentsClient  # lazy import
@@ -66,7 +64,6 @@ def main() -> None:
     agents_client = AgentsClient(endpoint=settings.ai_project_endpoint, credential=credential)
 
     existing = {a.name: a for a in agents_client.list_agents()}
-    registered: dict[str, str] = {}
 
     for definition in AGENT_DEFINITIONS:
         name = definition["name"]
@@ -86,10 +83,6 @@ def main() -> None:
                 instructions=definition["instructions"],
             )
             print(f"Created new agent: {name} ({agent.id})")
-        registered[name] = agent.id
-
-    OUTPUT_FILE.write_text(json.dumps(registered, indent=2) + "\n")
-    print(f"\nAgent IDs written to {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":
