@@ -77,14 +77,21 @@ class FoundryClient:
         wait=wait_exponential(multiplier=1, min=2, max=10),
         reraise=True,
     )
-    def triage(self, alert_context: str) -> str:
+    def complete_json(self, system_prompt: str, user_content: str) -> str:
         """
-        Send the alert context to Foundry and return the raw JSON string.
+        Generic single-turn chat completion that requests a JSON object back.
+
+        Used by every specialised agent (RootCauseAnalysisAgent,
+        RemediationPlannerAgent, the legacy monolithic triage agent, etc.)
+        so each agent can supply its own focused system prompt while sharing
+        one Foundry client/model/retry policy.
 
         Parameters
         ----------
-        alert_context : str
-            Serialised alert + log context built by the orchestration layer.
+        system_prompt : str
+            The role/instructions for this specific agent.
+        user_content : str
+            The serialised context/question for this turn.
 
         Returns
         -------
@@ -92,11 +99,11 @@ class FoundryClient:
             Raw LLM response (expected to be a valid JSON string).
         """
         messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": alert_context},
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
         ]
 
-        logger.debug("Sending triage request to Foundry (%d chars)", len(alert_context))
+        logger.debug("Sending request to Foundry (%d chars)", len(user_content))
 
         # OpenAI-compatible chat completions call via the AI Foundry project client
         result = self._openai_client.chat.completions.create(
@@ -110,6 +117,13 @@ class FoundryClient:
         raw = result.choices[0].message.content
         logger.debug("Foundry response received (%d chars)", len(raw))
         return raw
+
+    def triage(self, alert_context: str) -> str:
+        """Backward-compatible single-shot triage call (used by the legacy
+        monolithic IncidentTriageAgent). New code should prefer the
+        specialised agents (RootCauseAnalysisAgent, RemediationPlannerAgent)
+        which call complete_json() directly with focused prompts."""
+        return self.complete_json(SYSTEM_PROMPT, alert_context)
 
     def close(self) -> None:
         self._client.close()

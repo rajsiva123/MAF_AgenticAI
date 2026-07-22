@@ -18,46 +18,19 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from approval.human_approval import ApprovalGateway
 from llm.foundry_client import FoundryClient
 from models.alert import Alert
 from models.remediation_plan import ActionType, RemediationAction, RemediationPlan
+from models.triage_result import TriageResult
 from tools.log_analytics_tool import LogAnalyticsTool
 from tools.remediation_tool import RemediationTool
 from tools.resource_graph_tool import ResourceGraphTool
 
 logger = logging.getLogger(__name__)
 
-
-@dataclass
-class TriageResult:
-    """Full audit record produced by one agent invocation."""
-
-    alert: Alert
-    plan: Optional[RemediationPlan] = None
-    approved: bool = False
-    actions_executed: List[Dict[str, Any]] = field(default_factory=list)
-    errors: List[str] = field(default_factory=list)
-    completed_at: datetime = field(default_factory=datetime.utcnow)
-
-    def summary(self) -> str:
-        lines = [
-            f"Alert       : {self.alert.title} ({self.alert.severity})",
-            f"Approved    : {self.approved}",
-            f"Actions run : {len(self.actions_executed)}",
-        ]
-        if self.plan:
-            lines += [
-                f"Confidence  : {self.plan.confidence_score:.0%}",
-                f"Root cause  : {self.plan.root_cause_hypothesis}",
-            ]
-        if self.errors:
-            lines.append(f"Errors      : {'; '.join(self.errors)}")
-        return "\n".join(lines)
 
 
 class IncidentTriageAgent:

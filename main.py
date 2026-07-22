@@ -6,12 +6,13 @@ Entry point for the MAF Cloud Incident Triage PoC.
 Can be invoked:
   1. From the command line with a JSON alert file:
        python main.py --alert sample_alert.json
-  2. As an Azure Function HTTP trigger (see azure_function_app/ for that variant).
-  3. Programmatically by importing run_triage().
+  2. As an Azure Function HTTP trigger (see function_app.py for that variant).
+  3. Programmatically by importing run_triage() or run_orchestrated().
 
 Usage examples:
   python main.py --alert sample_alert.json
-  python main.py --demo          # runs with built-in demo alert
+  python main.py --demo                  # runs with built-in demo alert (legacy monolithic agent)
+  python main.py --demo --orchestrate    # runs with the multi-agent orchestration pipeline
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ import sys
 from pathlib import Path
 
 from agents.incident_triage_agent import IncidentTriageAgent
+from agents.orchestrator_agent import OrchestratorAgent
 from models.alert import Alert
 
 logging.basicConfig(
@@ -51,9 +53,20 @@ DEMO_ALERT_PAYLOAD = {
 
 
 def run_triage(alert: Alert) -> dict:
-    """Run the triage agent on an Alert. Returns serialisable result dict."""
+    """Run the legacy monolithic triage agent on an Alert. Returns serialisable result dict."""
     agent = IncidentTriageAgent()
     result = agent.run(alert)
+    return _serialise(result)
+
+
+def run_orchestrated(alert: Alert) -> dict:
+    """Run the multi-agent OrchestratorAgent pipeline on an Alert."""
+    orchestrator = OrchestratorAgent()
+    result = orchestrator.run(alert)
+    return _serialise(result)
+
+
+def _serialise(result) -> dict:
     return {
         "alert_id": result.alert.alert_id,
         "approved": result.approved,
@@ -70,6 +83,11 @@ def main() -> None:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--alert", type=Path, help="Path to JSON alert file")
     group.add_argument("--demo", action="store_true", help="Run with built-in demo alert")
+    parser.add_argument(
+        "--orchestrate",
+        action="store_true",
+        help="Use the multi-agent OrchestratorAgent pipeline instead of the legacy monolithic agent",
+    )
     args = parser.parse_args()
 
     if args.demo:
@@ -80,7 +98,7 @@ def main() -> None:
     alert = Alert.from_azure_payload(payload)
     logger.info("Alert loaded: %s (%s)", alert.title, alert.severity)
 
-    output = run_triage(alert)
+    output = run_orchestrated(alert) if args.orchestrate else run_triage(alert)
     print("\n" + "═" * 60)
     print("TRIAGE RESULT")
     print("═" * 60)

@@ -1,15 +1,18 @@
 """
-azure_function_app/function_app.py
------------------------------------
+function_app.py
+-----------------
 Azure Functions (Python v2 programming model) entry point for the MAF
 Cloud Incident Triage agent.
 
 Exposes:
-  POST /api/triage   - accepts an Azure Monitor common-alert-schema JSON body
-                        (or a simplified {"demo": true} body) and runs the
-                        IncidentTriageAgent synchronously, returning the
-                        triage result as JSON.
-  GET  /api/health    - simple liveness check.
+  POST /api/triage       - runs the legacy monolithic IncidentTriageAgent.
+  POST /api/orchestrate  - runs the multi-agent OrchestratorAgent pipeline
+                           (Diagnostics -> RCA -> Planner -> Approval ->
+                           Execution -> Notifier).
+  GET  /api/health       - simple liveness check.
+
+Both triage routes accept an Azure Monitor common-alert-schema JSON body,
+or a simplified {"demo": true} body to use the built-in demo alert.
 
 This module reuses the existing project code (agents/, models/, llm/, tools/,
 approval/, config/) which is packaged alongside this function app at deploy
@@ -22,9 +25,8 @@ import logging
 
 import azure.functions as func
 
-from agents.incident_triage_agent import IncidentTriageAgent
+from main import DEMO_ALERT_PAYLOAD, run_orchestrated, run_triage
 from models.alert import Alert
-from main import DEMO_ALERT_PAYLOAD, run_triage
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -41,25 +43,32 @@ def health(req: func.HttpRequest) -> func.HttpResponse:
     )
 
 
-@app.route(route="triage", methods=["POST"])
-def triage(req: func.HttpRequest) -> func.HttpResponse:
-    """HTTP-triggered incident triage.
-
-    Body: either a full Azure Monitor common alert schema payload, or
-    {"demo": true} to use the built-in demo alert.
-    """
+def _parse_alert(req: func.HttpRequest) -> Alert:
+    """Parse the request body into an Alert (raises on invalid payload)."""
     try:
         body = req.get_json()
     except ValueError:
         body = {}
 
-    if body.get("demo"):
-        payload = DEMO_ALERT_PAYLOAD
-    else:
-        payload = body
+    payload = DEMO_ALERT_PAYLOAD if body.get("demo") else body
+    return Alert.from_azure_payload(payload)
 
+
+@app.route(route="triage", methods=["POST"])
+def triage(req: func.HttpRequest) -> func.HttpResponse:
+    """HTTP-triggered incident triage using the legacy monolithic agent."""
+    return _handle_triage_request(req, run_triage, agent_label="IncidentTriageAgent")
+
+
+@app.route(route="orchestrate", methods=["POST"])
+def orchestrate(req: func.HttpRequest) -> func.HttpResponse:
+    """HTTP-triggered incident triage using the multi-agent OrchestratorAgent pipeline."""
+    return _handle_triage_request(req, run_orchestrated, agent_label="OrchestratorAgent")
+
+
+def _handle_triage_request(req: func.HttpRequest, run_fn, agent_label: str) -> func.HttpResponse:
     try:
-        alert = Alert.from_azure_payload(payload)
+        alert = _parse_alert(req)
     except Exception as exc:  # noqa: BLE001 - surface parse errors to caller
         logger.exception("Failed to parse alert payload")
         return func.HttpResponse(
@@ -68,14 +77,14 @@ def triage(req: func.HttpRequest) -> func.HttpResponse:
             mimetype="application/json",
         )
 
-    logger.info("Alert received: %s (%s)", alert.title, alert.severity)
+    logger.info("[%s] Alert received: %s (%s)", agent_label, alert.title, alert.severity)
 
     try:
-        result = run_triage(alert)
+        result = run_fn(alert)
     except Exception as exc:  # noqa: BLE001 - return 500 with details
-        logger.exception("Triage agent failed")
+        logger.exception("%s failed", agent_label)
         return func.HttpResponse(
-            json.dumps({"error": f"Triage failed: {exc}"}),
+            json.dumps({"error": f"{agent_label} failed: {exc}"}),
             status_code=500,
             mimetype="application/json",
         )
